@@ -1,0 +1,274 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Document Classification by ravitejatv</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Document Classification</h1>
+        <p class="header"></p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/ravitejatv/IREMajorProjectDocClassification/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/ravitejatv/IREMajorProjectDocClassification/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/ravitejatv/IREMajorProjectDocClassification">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/ravitejatv">ravitejatv</a></p>
+
+
+      </header>
+      <section>
+        <h2>
+<a id="aim" class="anchor" href="#aim" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Aim</h2>
+
+<p>Given a Wikipedia Document our aim is to say the Categories it may belong to, based on a Training data in which each Document is tagged to multiple Categories,  The Categories we considered are the following: </p>
+
+<p>Wiki,Art,Reference,People,Culture,Books,Design,Politics,Technology,Psychology,Interesting,Wikipedia,Research,Religion
+,Music,Math,Development,Theory,Philosophy,Article,Language,Science,Programming,History,Software</p>
+
+<h2>
+<a id="dataset" class="anchor" href="#dataset" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dataset</h2>
+
+<p>We used Wiki10+ data set from following link:
+<a href="http://nlp.uned.es/social-tagging/wiki10+/">http://nlp.uned.es/social-tagging/wiki10+/</a></p>
+
+<p>The data set contains following two files:</p>
+
+<p>wiki10+_tag-data.tar.gz  (3,6 MB): Contains all the tag data for the Wikipedia articles.</p>
+
+<p>wiki10+_documents.tar.bz2  (271 MB): Content for all the Wikipedia articles on the dataset in HTML format. We extracted the text from HTML to run different experiments.</p>
+
+<p>As we only consider top 25 documents, we removed those documents who don't have even one of these top 25 categories
+This dataset is made up by 20,764 unique URLs, all of them with their corresponding social tags.<br>
+All of them are English Wikipedia articles with at least 10 annotations on Delicious. Therefore, the tag information for each of these Wikipedia articles as well as the text content can be found in this dataset.</p>
+
+<h2>
+<a id="approach-1--lda-or-latent-dirichlet-allocation" class="anchor" href="#approach-1--lda-or-latent-dirichlet-allocation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach 1:  LDA or Latent Dirichlet Allocation</h2>
+
+<p>We can use LDA to classify documents in different tags. We know that LDA divides the given corpus in fixed no. of topics and can also provide which topics are contained in a document and with what probability. For the experiments performed  using LDA, we don’t need to worry about internal implementation of LDA. We used gensim’s implementation of LDA. To use the library, we just need to know few points about input and output format.</p>
+
+<h3>
+<a id="during-learning-phase" class="anchor" href="#during-learning-phase" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>During Learning phase</h3>
+
+<p>INPUT:<br>
+We provide all the wiki documents in single XML file zipped in bz2 format.</p>
+
+<p>LEARNT MODEL:<br>
+Word distribution for each topic eg: “topic #0: 0.009<em>river + 0.008</em>lake + 0.006<em>island + 0.005</em>mountain + 
+0.004<em>area + 0.004</em>park + 0.004<em>antarctic + 0.004</em>south + 0.004<em>mountains + 0.004</em>dam”</p>
+
+<h3>
+<a id="during-testing-phase" class="anchor" href="#during-testing-phase" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>During Testing phase</h3>
+
+<p>INPUT:<br>
+We provide the document to be classified in bag of words form to the learnt model</p>
+
+<p>OUTPUT:<br>
+Topic distribution for a the text eg: “[(34, 0.023705742561150572), (60, 0.017830310671555303), (62, 0.023999239610385081), (83,0.029439444128473557), (87, 0.028172479800878891), (90, 0.1207424163376625), (116,0.022904510579689157)]”  represents the probabilities of the doc to fall under topics like 34,60,62….</p>
+
+<h3>
+<a id="major-challenge-in-classification" class="anchor" href="#major-challenge-in-classification" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Major challenge in classification:</h3>
+
+<p>It seems to be fairly simple to classify a document in different topics as we can see in output of testing phase. But  our aim is to classify the document under different tags like “politics, science” etc. and not under topic numbers. </p>
+
+<h3>
+<a id="possible-solutions" class="anchor" href="#possible-solutions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Solutions</h3>
+
+<p>Clearly we need some way to map all the topics learnt by LDA to the most suitable tags. If we are able to do this then we simply test the unknown text against the model learnt by LDA and then report the tag corresponding to the topic given by LDA in output. We tried two different solutions to map topics to the tags:    </p>
+
+<p>1)  As each topic of LDA is represented by distribution of words. We can create a query by combining those words and find best matched document on tf-idf basis for that query. That particular document must be the best match for that topic. So we can map the topic to tag of best matched document.</p>
+
+<p>2) We can find probability distribution of topics for all the documents. Represent each document as a topic vector. Now find the closest document or the most similar document for each topic. Map the topic to the tag of that particular document.</p>
+
+<h2>
+<a id="approach-1" class="anchor" href="#approach-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach 1</h2>
+
+<p>We can specify the major steps of to implement this approach as follows:   </p>
+
+<p>1) Divide the documents in training and test data with 4000 docs in test data.  </p>
+
+<p>2)On training data run gensim's LDA and save the learnt model. Set the number of topics as 300.   </p>
+
+<p>3) Save all the topics in a file and convert them to queries.  </p>
+
+<h3>
+<a id="example-topic" class="anchor" href="#example-topic" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example topic:</h3>
+
+<p>2016-04-06 00:05:52,466 : INFO : topic #299 (0.003): 0.014<em>insurance + 0.009</em>scott + 0.007<em>samurai + 0.007</em>hipster + 0.006<em>forecasting + 0.006</em>fbi + 0.006<em>imf +    0.005</em>skeptical + 0.005<em>bass + 0.005</em>hidden</p>
+
+<h3>
+<a id="query-corresponding-to-above-topic--299" class="anchor" href="#query-corresponding-to-above-topic--299" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Query corresponding to above topic  #299:</h3>
+
+<p>299:insurance scott samurai hipster forecasting fbi imf skeptical bass hidden   </p>
+
+<p>4) For each query, retrieve the most relevant document in training set on tf-idf basis and create topic to doc Id mapping.</p>
+
+<h3>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example:</h3>
+
+<p>299 : cae3757420fbc4008bbfe492ab0d4cb5    </p>
+
+<p>5)   Create a topic to tag mapping using the docId to tag mapping (already available in tagData.xml) and doc ID to topic mapping created in above step.</p>
+
+<h3>
+<a id="example-docid-to-tag-from-tagdataxml" class="anchor" href="#example-docid-to-tag-from-tagdataxml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example docId to tag from tagData.xml:</h3>
+
+<p>cae3757420fbc4008bbfe492ab0d4cb5 : ['wiki', 'en', 'wikipedia,', 'activism', '-‘, 'political', 'poetry', 'free','person', 'music', 'encyclopedia', 'the', 'biography', 'history']    </p>
+
+<h3>
+<a id="example-topic-to-docid" class="anchor" href="#example-topic-to-docid" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example topic to docId:</h3>
+
+<p>299:cae3757420fbc4008bbfe492ab0d4cb5</p>
+
+<h3>
+<a id="example-topic-to-tag" class="anchor" href="#example-topic-to-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example topic to tag:</h3>
+
+<p>299:['wiki', 'en', 'wikipedia,', 'activism', '-', 'political', 'poetry', 'free', 'person', 'music‘, 'encyclopedia', 'the','biography', 'history'] </p>
+
+<p>Now each topic is mapped to multiple tags. </p>
+
+<p>6)   For each of the test documents (from 4000 docs in test data), find out the relevant topics using learnt LDA model. Combine the tags corresponding to them and match them against already available target tags (from tagData.xml) for that particular document.<br>
+         If even one tag is matched, we say that document is correctly classified.</p>
+
+<h3>
+<a id="example-1" class="anchor" href="#example-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example:</h3>
+
+<p>Topic distribution returned by LDA for a particular doc:   </p>
+
+<p>[(34, 0.023705742561150572), (60, 0.017830310671555303), (62, 0.023999239610385081), (83,0.029439444128473557), (87, 0.028172479800878891), (90, 0.1207424163376625), (116,0.022904510579689157), (149, 0.010136256627631658), (155,0.045428499528247894), (162,0.014294122339773195), (192, 0.01315170635603234), (193, 0.055764500858303222), (206,0.015174121956574787), (240, 0.052498569359746373), (243,0.016285345117555323), (247,0.019478047862044864), (255, 0.018193391082926114), (263,0.030209722561452931), (287,0.042405659613804568), (289, 0.055528896333028231),(291,0.030064093091433357)]     </p>
+
+<p>Tags combined for above topics (from topic to tag mapping created in above step):    </p>
+
+<p>['money', 'brain', 'web', 'thinking', 'interesting', 'environment', 'teaching', 'web2.0', 'bio', 'finance', 'government', 'food', 'howto', 'geek', 'cool', 'articles', 'school', 'cognitive', 'cognition', 'energy', 'computerscience', '2read', 'culture', 'computer', 'video', 'home', 'todo', 'investment', 'depression', 'psychology', 'wikipedia', 'research', 'health', 'internet', 'medicine', 'electronics', 'tech', 'math', 'business', 'marketing', 'free', 'standard', 'interface', 'article', 'definition', 'anarchism', 'of', 'study', 'economics', 'programming', 'american', 'games', 'advertising', 'social', 'software', 'apple', 'coding', 'maths', 'learning', 'management', 'system', 'quiz', 'pc', 'music', 'memory', 'war', 'nutrition', 'comparison', 'india', 'info', 'science', 'dev', '<a href="https://github.com/wikipedia" class="user-mention">@wikipedia</a>', 'future', 'behavior', 'design', 'history', '<a href="https://github.com/read" class="user-mention">@read</a>', 'mind', 'hardware', 'webdev', 'politics', 'technology‘]    </p>
+
+<p>Target tags for this particular doc from tagData.xml:    </p>
+
+<p>['reference', 'economics', 'wikipedia', 'politics', 'reading', 'resources']   </p>
+
+<p>Accuracy from this approach: 97% </p>
+
+<p>Problem with this approach:   </p>
+
+<p>If there is any match between our found tags and true tags, then we call it as correctly classified. Probability of such scenario is very high as we have multiple found tags and multiple true tags. So even if we are doing something wrong, chances of getting good accuracy is very high.
+As we are doing tf-idf based matching then there is high chance that the document we get on top is not best match for that particular topic. It can also happen because we are not considering all the representative words of a particular topic to frame the query, we just considered top 10.</p>
+
+<h3>
+<a id="approach-2" class="anchor" href="#approach-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach 2</h3>
+
+<p>After analyzing the data we found that only 25 of the tags represent around 19K documents out of 20K. Which simply means that we can eliminate the less frequent tags and docs corresponding to them. Which means we have to divide the corpus among 25 topics at most. Which makes it easier to implement approach 2, as each document can be easily represented in 25 dimensional topic space. We can specify the major steps to implement this approach as follows:</p>
+
+<p>1) Eliminate the less frequent tags and documents related to them. keep only top 25. Docs left will be around 19K.   </p>
+
+<p>2) On complete data run gensim's LDA and saved the learnt model. Set number of topics set as 25.  </p>
+
+<p>3) Save all the topics in a file and convert them to queries as in previous approach.   </p>
+
+<p>4) Test each of 19K documents against the learnt model and find the topic distribution eg: “42d1d305d10b4b025e01e8237c44c87e:0 0 0 0 0.0242823647949 0 0.037682372871 0 0 0 0.0988683434224 0.0113662521741 0.0157100377468 0 0 0.182273317591 0.205447648234 0 0.0524222798936 0.167240557357 0 0.178899361052 0 0 0” represents the probabilities of the doc with given id in 25 different topics.   </p>
+
+<p>5) Using above distribution find out the most relevant document for a particular topic and map it to the tag of that document. It gives the similar topic to tag mapping as in previous approach.   </p>
+
+<p>6) Now many topics must have matched to more than one tag. Manually check which tag is best suited for that particular topic depending on words contained in the topic. As a result we have each topic mapped to at most one tag.   </p>
+
+<p>7) Now perform the testing as done in step 6 of previous approach but on all 19K docs.  </p>
+
+<p>Accuracy from this approach: 88% </p>
+
+<p>Problem with this approach:  </p>
+
+<p>Mapping topics to tags manually is an issue. We can’t always find out the best suited tag just by seeing the topic words.<br>
+ Sometimes tags don’t reflect anything eg: ‘wikipedia’, ‘wiki’, ‘reference’ create problem.   </p>
+
+<p>Modification:  </p>
+
+<p>Performed the above experiment again but just with meaningful tags i.e. no tag like  ‘wikipedia’, ‘wiki’,<br>
+‘reference’  etc. After eliminating these documents left were 17K.  But the approach posed another issue:   </p>
+
+<p>1) There are similar tags which can represent a topic at the same time eg: [research, science], [web, internet], [programming, math], [literature, language].  </p>
+
+<p>If we keep all such similar tags then accuracy is : 80% but if we strictly keep just one tag then accuracy drops  to 65%.
+Reason for the drop is possibly manual work. We can’t surely say which tag should be kept when both tags are 
+same.    </p>
+
+<p>Conclusion: 2ND approach is better as there is very less chance of false positives and accuracy is also not bad considering just ~19K documents for learning.<br>
+Note:Rest of the methods are ML classification based approaches with vectorial input</p>
+
+<h2>
+<a id="approach-2-tf-idf-feature-vectors" class="anchor" href="#approach-2-tf-idf-feature-vectors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach 2: tf-idf feature vectors</h2>
+
+<p>Tf-idf reflects how important a word is to a document in a collection or corpus. It's value increases proportionally to the number of times a word appears in the document<br>
+The choice of idf weighting scheme is Inverse document frequency<br>
+The choice of tf weighting scheme is log normalization<br>
+As Each vector size could be at max the size of the Vocabulary, we only taken top 500 words (most rarest) , restricting   maximum number of features to 500.<br>
+Time taken to build the matrix is around 5 Minutes.<br>
+Note that it Generates Relative Vectors , that is vector generation of one document depends on vector generation of other   documents, therefore given  one new document, Vectors for all documents have to be updated<br>
+Preprocessing includes Case Folding, Stemming and stopword removal done (sklearn has inbuilt stop word removal)  </p>
+
+<h2>
+<a id="approach-3-doc2vec-vectors" class="anchor" href="#approach-3-doc2vec-vectors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach 3: Doc2Vec vectors</h2>
+
+<p>We Used Distributed Memory Algorithm version of Doc2Vec, It has the Potential to overcome many weaknesses of bag-of-words models.The vector representations are learned to predict the surrounding words in contexts sampled from the document.
+For Example, For our 20,000 documents, Training takes around 2 hours, and generates 4GB model which stores the mapping between each document and a 300 size (size chosen arbitrarily) vectors
+in other words, training the model itself is the document feature extraction
+Because of which it's an even bad Relative feature extraction, even for one more test document, the entire training of 2 hours  needs to be run again.
+as part of preprocessing : Case Folding, Stemming and stopword removal was done</p>
+
+<h2>
+<a id="approach-4-word2vec-vectors" class="anchor" href="#approach-4-word2vec-vectors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach 4: Word2Vec vectors</h2>
+
+<p>Word2Vec is a Word Embedding which is based on Co-Occurrence matrix or  explicit representation in terms of the context in which words appear. We Used Pre-Trained 4.6 GB model trained on English News Corpus as we had a corpus relatively, training on it wouldn't give us that good vectors.
+We did Preprocessing to Remove Stop Words, Words not existing in the model removed as no vector available, No stemming or case folding as that's how the model was originally trained i.e 
+vector(“computer”) ≠ vector(“Computer”) ≠ vector(“Compute”) ≠  vector(“compute”)
+For Document Vector , Average was done over the 100 size vectors of the words left in the document after pre-processing.
+Even though Training the model is already done, Extracting vectors around 4000 times for  each of 20000 documents takes a lot of time around  5 hours.
+But, Advantage is that Word2Vec Generates Absolute Vectors, that is the vector generation of one document is independant of vector generation of other documents, Hence converting one single document to vector is very fast.</p>
+
+<h3>
+<a id="classificationresults-and-comparison" class="anchor" href="#classificationresults-and-comparison" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Classification,Results and Comparison</h3>
+
+<p>Testing And Training
+Before doing Any Feature Extraction Documents were randomly shuffled and 5000 documents randomly taken out as Testing, rest of the around 15,000 as Training.
+Assertion was made that every category in testing at least occurs once in training.
+For all feature extraction same sets of documents used, no shuffling again so that we can compare models . that is all Feature extraction models were trained against same training data and tested against same testing data.
+Classifier Used : SVM with SGD training
+Why? 
+As we have separate Independent Classifier for each label (multi-class training)  and Vectors are up to 100 to 1000 in length. Other Classifiers take too much time where Stochastic Gradient Design is very fast. Therefore we went with this classifier.
+We used Sklearn’s Implementation:
+<a href="http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html">http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html</a>
+Accuracies
+Note that our data is quite imbalanced, that is the green line “Maxclass” Represents the Accuracy when all vectors in testing are assigned the maximum occurring label from Training, As evident it is , it's value is almost always above 80%  </p>
+
+<p>1) The Topic Distribution Vectors generated from LDA seem to be as bad as Maxclass assignment, (hence they overlap in the figure) when applied to the classifier, However LDA training might be the fastest of all. </p>
+
+<p>2)It's difficult to compare doc2vec and tf-idf but doc2vec performs better than word2vec, It's also faster than word2vec when it comes to generating 20,000 vectors </p>
+
+<p>3)Word2Vec didn't perform so good and also took quite a time for vector extraction of all documents, the only advantage is that it’s feature extraction of one document doesn't affect other vectors, hence less time for 1 test document</p>
+
+<p>4) tf-idf  heavily depends on the number of feature words we consider , In this experiment we took 500 words, but by increasing the size, accuracy may increase but will take more time and space  to store too.</p>
+
+<p>5) LDA performs good if we look at the accuracy but we can’t guarantee good accuracy always as there can be error in manually choosing best tag for topics.  </p>
+
+<h2>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h2>
+
+<p>Mohit Sharma, Vijjini Anvesh Rao, T.V.Ravi Teja       </p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
